@@ -1,13 +1,15 @@
 import javax.swing.*;
+import javax.swing.border.EmptyBorder;
+import javax.swing.border.TitledBorder;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 
 /**
- * SPN Encryption/Decryption Implementation with GUI
+ * SPN Encryption/Decryption Implementation with Enhanced GUI
  *
  * This program implements a Substitution-Permutation Network (SPN) cipher
- * with a graphical user interface to encrypt and decrypt custom messages.
+ * with an improved graphical user interface to encrypt and decrypt custom messages.
  *
  * Parameters:
  * - Rounds (r) = 4
@@ -16,12 +18,29 @@ import java.awt.event.ActionListener;
  * - s = 32 (key length in bits)
  */
 public class SPNWithGUI extends JFrame {
+    // Color scheme
+    private static final Color BACKGROUND_COLOR = new Color(240, 240, 245);
+    private static final Color PRIMARY_COLOR = new Color(70, 130, 180);  // Steel Blue
+    private static final Color SECONDARY_COLOR = new Color(211, 211, 211);  // Light Gray
+    private static final Color ACCENT_COLOR = new Color(255, 127, 80);  // Coral
+    private static final Color TEXT_COLOR = new Color(50, 50, 50);  // Dark Gray
+
+    // Font settings
+    private static final Font TITLE_FONT = new Font("SansSerif", Font.BOLD, 16);
+    private static final Font LABEL_FONT = new Font("SansSerif", Font.PLAIN, 14);
+    private static final Font TEXT_FONT = new Font("Monospaced", Font.PLAIN, 14);
+
+    // Components
     private JTextArea inputTextArea;
     private JTextArea encryptedTextArea;
     private JTextArea decryptedTextArea;
     private JButton encryptButton;
     private JButton decryptButton;
     private JButton resetButton;
+    private JButton copyEncryptedButton;
+    private JButton copyDecryptedButton;
+    private JCheckBox showVerboseOutput;
+    private JLabel statusLabel;
 
     private SPN spn;
 
@@ -30,10 +49,11 @@ public class SPNWithGUI extends JFrame {
         spn = new SPN(4, 4, 4);
 
         // Set up the JFrame
-        setTitle("SPN Encryption/Decryption");
-        setSize(600, 500);
+        setTitle("SPN Encryption/Decryption Tool");
+        setSize(800, 700);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLayout(new BorderLayout());
+        getContentPane().setBackground(BACKGROUND_COLOR);
 
         // Create the components
         setupComponents();
@@ -44,131 +64,331 @@ public class SPNWithGUI extends JFrame {
     }
 
     private void setupComponents() {
+        // Create the header panel
+        JPanel headerPanel = createHeaderPanel();
+
+        // Create the main content panel
+        JPanel contentPanel = new JPanel();
+        contentPanel.setLayout(new BoxLayout(contentPanel, BoxLayout.Y_AXIS));
+        contentPanel.setBackground(BACKGROUND_COLOR);
+        contentPanel.setBorder(new EmptyBorder(10, 20, 10, 20));
+
         // Create input panel
-        JPanel inputPanel = new JPanel(new BorderLayout());
-        inputPanel.setBorder(BorderFactory.createTitledBorder("Input Text"));
-        inputTextArea = new JTextArea(5, 40);
-        inputTextArea.setLineWrap(true);
-        inputTextArea.setWrapStyleWord(true);
-        JScrollPane inputScrollPane = new JScrollPane(inputTextArea);
-        inputPanel.add(inputScrollPane, BorderLayout.CENTER);
+        JPanel inputPanel = createTextPanel("Eingabetext", "Geben Sie hier den zu verschlüsselnden Text ein:", true);
+        inputTextArea = createTextArea();
+        inputPanel.add(new JScrollPane(inputTextArea), BorderLayout.CENTER);
 
         // Create encrypted text panel
-        JPanel encryptedPanel = new JPanel(new BorderLayout());
-        encryptedPanel.setBorder(BorderFactory.createTitledBorder("Encrypted Text (Binary)"));
-        encryptedTextArea = new JTextArea(5, 40);
-        encryptedTextArea.setLineWrap(true);
+        JPanel encryptedPanel =
+            createTextPanel("Verschlüsselter Text (Binär)", "Der verschlüsselte Text im binären Format:", false);
+        encryptedTextArea = createTextArea();
         encryptedTextArea.setEditable(false);
-        JScrollPane encryptedScrollPane = new JScrollPane(encryptedTextArea);
-        encryptedPanel.add(encryptedScrollPane, BorderLayout.CENTER);
+        encryptedPanel.add(new JScrollPane(encryptedTextArea), BorderLayout.CENTER);
+
+        // Add copy button for encrypted text
+        copyEncryptedButton = new JButton("Kopieren");
+        styleButton(copyEncryptedButton, new Color(70, 70, 70));  // Dunklere Farbe für besseren Kontrast
+        copyEncryptedButton.addActionListener(e -> copyToClipboard(encryptedTextArea.getText()));
+        copyEncryptedButton.setEnabled(false);
+        JPanel encryptedButtonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+        encryptedButtonPanel.setBackground(BACKGROUND_COLOR);
+        encryptedButtonPanel.add(copyEncryptedButton);
+        encryptedPanel.add(encryptedButtonPanel, BorderLayout.SOUTH);
 
         // Create decrypted text panel
-        JPanel decryptedPanel = new JPanel(new BorderLayout());
-        decryptedPanel.setBorder(BorderFactory.createTitledBorder("Decrypted Text"));
-        decryptedTextArea = new JTextArea(5, 40);
-        decryptedTextArea.setLineWrap(true);
-        decryptedTextArea.setWrapStyleWord(true);
+        JPanel decryptedPanel = createTextPanel("Entschlüsselter Text", "Der entschlüsselte Text:", false);
+        decryptedTextArea = createTextArea();
         decryptedTextArea.setEditable(false);
-        JScrollPane decryptedScrollPane = new JScrollPane(decryptedTextArea);
-        decryptedPanel.add(decryptedScrollPane, BorderLayout.CENTER);
+        decryptedPanel.add(new JScrollPane(decryptedTextArea), BorderLayout.CENTER);
 
-        // Create button panel
-        JPanel buttonPanel = new JPanel();
-        encryptButton = new JButton("Encrypt");
-        decryptButton = new JButton("Decrypt");
-        resetButton = new JButton("Reset");
-        buttonPanel.add(encryptButton);
-        buttonPanel.add(decryptButton);
-        buttonPanel.add(resetButton);
+        // Add copy button for decrypted text
+        copyDecryptedButton = new JButton("Kopieren");
+        styleButton(copyDecryptedButton, new Color(70, 70, 70));  // Dunklere Farbe für besseren Kontrast
+        copyDecryptedButton.addActionListener(e -> copyToClipboard(decryptedTextArea.getText()));
+        copyDecryptedButton.setEnabled(false);
+        JPanel decryptedButtonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+        decryptedButtonPanel.setBackground(BACKGROUND_COLOR);
+        decryptedButtonPanel.add(copyDecryptedButton);
+        decryptedPanel.add(decryptedButtonPanel, BorderLayout.SOUTH);
 
-        // Add action listeners
-        encryptButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                encryptText();
-            }
-        });
+        // Create action buttons panel
+        JPanel actionPanel = createActionPanel();
 
-        decryptButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                decryptText();
-            }
-        });
+        // Create status panel
+        JPanel statusPanel = createStatusPanel();
 
-        resetButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                resetFields();
-            }
-        });
+        // Add all panels to the content panel
+        contentPanel.add(inputPanel);
+        contentPanel.add(Box.createRigidArea(new Dimension(0, 10)));
+        contentPanel.add(encryptedPanel);
+        contentPanel.add(Box.createRigidArea(new Dimension(0, 10)));
+        contentPanel.add(decryptedPanel);
+        contentPanel.add(Box.createRigidArea(new Dimension(0, 10)));
+        contentPanel.add(actionPanel);
 
-        // Create the main panel to hold all components
-        JPanel mainPanel = new JPanel();
-        mainPanel.setLayout(new BoxLayout(mainPanel, BoxLayout.Y_AXIS));
-        mainPanel.add(inputPanel);
-        mainPanel.add(encryptedPanel);
-        mainPanel.add(decryptedPanel);
-        mainPanel.add(buttonPanel);
+        // Add all components to the frame
+        add(headerPanel, BorderLayout.NORTH);
+        add(contentPanel, BorderLayout.CENTER);
+        add(statusPanel, BorderLayout.SOUTH);
+    }
 
-        // Add the main panel to the frame
-        add(mainPanel, BorderLayout.CENTER);
+    private JPanel createHeaderPanel() {
+        JPanel headerPanel = new JPanel(new BorderLayout());
+        headerPanel.setBackground(PRIMARY_COLOR);
+        headerPanel.setBorder(new EmptyBorder(15, 20, 15, 20));
+
+        JLabel titleLabel = new JLabel("Substitution-Permutation Netzwerk (SPN) Verschlüsselung");
+        titleLabel.setFont(new Font("SansSerif", Font.BOLD, 18));
+        titleLabel.setForeground(Color.WHITE);
+
+        JLabel subtitleLabel = new JLabel("Verschlüsseln und Entschlüsseln mit SPN im CTR-Modus");
+        subtitleLabel.setFont(new Font("SansSerif", Font.PLAIN, 14));
+        subtitleLabel.setForeground(new Color(230, 230, 230));
+
+        JPanel labelPanel = new JPanel(new GridLayout(2, 1));
+        labelPanel.setBackground(PRIMARY_COLOR);
+        labelPanel.add(titleLabel);
+        labelPanel.add(subtitleLabel);
+
+        headerPanel.add(labelPanel, BorderLayout.WEST);
+
+        return headerPanel;
+    }
+
+    private JPanel createTextPanel(String title, String description, boolean withInfo) {
+        JPanel panel = new JPanel(new BorderLayout());
+        panel.setBackground(BACKGROUND_COLOR);
+
+        // Create titled border with custom styling
+        TitledBorder titledBorder = BorderFactory.createTitledBorder(
+            BorderFactory.createLineBorder(PRIMARY_COLOR, 1),
+            title
+        );
+        titledBorder.setTitleFont(TITLE_FONT);
+        titledBorder.setTitleColor(PRIMARY_COLOR);
+        panel.setBorder(BorderFactory.createCompoundBorder(
+            titledBorder,
+            BorderFactory.createEmptyBorder(5, 10, 10, 10)
+        ));
+
+        if (withInfo) {
+            JPanel infoPanel = new JPanel(new BorderLayout());
+            infoPanel.setBackground(BACKGROUND_COLOR);
+
+            JLabel descLabel = new JLabel(description);
+            descLabel.setFont(LABEL_FONT);
+            descLabel.setForeground(TEXT_COLOR);
+            infoPanel.add(descLabel, BorderLayout.WEST);
+
+            panel.add(infoPanel, BorderLayout.NORTH);
+        }
+
+        return panel;
+    }
+
+    private JTextArea createTextArea() {
+        JTextArea textArea = new JTextArea();
+        textArea.setFont(TEXT_FONT);
+        textArea.setLineWrap(true);
+        textArea.setWrapStyleWord(true);
+        textArea.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
+        return textArea;
+    }
+
+    private JPanel createActionPanel() {
+        JPanel panel = new JPanel();
+        panel.setLayout(new FlowLayout(FlowLayout.CENTER, 20, 10));
+        panel.setBackground(BACKGROUND_COLOR);
+
+        encryptButton = new JButton("Verschlüsseln");
+        decryptButton = new JButton("Entschlüsseln");
+        resetButton = new JButton("Zurücksetzen");
+
+        styleButton(encryptButton, PRIMARY_COLOR);
+        styleButton(decryptButton, new Color(60, 100, 140));  // Dunklere Farbe für besseren Kontrast
+        styleButton(resetButton, ACCENT_COLOR);
+
+        encryptButton.addActionListener(e -> encryptText());
+        decryptButton.addActionListener(e -> decryptText());
+        resetButton.addActionListener(e -> resetFields());
+
+        // Add verbose output option
+        showVerboseOutput = new JCheckBox("Ausführliche Ausgabe");
+        showVerboseOutput.setFont(LABEL_FONT);
+        showVerboseOutput.setBackground(BACKGROUND_COLOR);
+        showVerboseOutput.setForeground(TEXT_COLOR);
+        showVerboseOutput.setSelected(true);  // Per default aktiviert
+
+        panel.add(encryptButton);
+        panel.add(decryptButton);
+        panel.add(resetButton);
+        panel.add(showVerboseOutput);
+
+        return panel;
+    }
+
+    private JPanel createStatusPanel() {
+        JPanel panel = new JPanel(new BorderLayout());
+        panel.setBackground(SECONDARY_COLOR);
+        panel.setBorder(new EmptyBorder(5, 20, 5, 20));
+
+        statusLabel = new JLabel("Bereit");
+        statusLabel.setFont(LABEL_FONT);
+
+        panel.add(statusLabel, BorderLayout.WEST);
+
+        return panel;
+    }
+
+    private void styleButton(JButton button, Color color) {
+        button.setBackground(color);
+        button.setForeground(Color.WHITE);
+        button.setFont(LABEL_FONT);
+        button.setFocusPainted(false);
+        button.setBorderPainted(false);
+        button.setPreferredSize(new Dimension(140, 40));
+        button.setCursor(new Cursor(Cursor.HAND_CURSOR));
     }
 
     private void encryptText() {
         String inputText = inputTextArea.getText();
         if (inputText.isEmpty()) {
-            JOptionPane.showMessageDialog(this, "Please enter text to encrypt.", "Error", JOptionPane.ERROR_MESSAGE);
+            updateStatus("Fehler: Bitte geben Sie Text zum Verschlüsseln ein.", true);
             return;
         }
 
-        // Convert text to binary (ASCII)
-        String binaryText = textToBinary(inputText);
+        try {
+            // Convert text to binary (ASCII)
+            String binaryText = textToBinary(inputText);
 
-        // Add padding according to specifications (add a '1' and then zeros until length is divisible by 16)
-        binaryText += "1";
-        while (binaryText.length() % 16 != 0) {
-            binaryText += "0";
+            if (showVerboseOutput.isSelected()) {
+                encryptedTextArea.setText("Original (als Binär): " + binaryText + "\n\n");
+            } else {
+                encryptedTextArea.setText("");
+            }
+
+            // Add padding according to specifications (add a '1' and then zeros until length is divisible by 16)
+            binaryText += "1";
+            while (binaryText.length() % 16 != 0) {
+                binaryText += "0";
+            }
+
+            if (showVerboseOutput.isSelected()) {
+                encryptedTextArea.append("Mit Padding: " + binaryText + "\n\n");
+            }
+
+            // Split into blocks of 16 bits
+            String[] blocks = Helper.splitString(binaryText, 16);
+
+            // Generate IV (first block) - for simplicity, use a fixed IV here
+            String iv = "0000010011010010";
+
+            // Encrypt using CTR mode
+            StringBuilder encryptedText = new StringBuilder();
+            encryptedText.append(iv);  // First block is IV
+
+            if (showVerboseOutput.isSelected()) {
+                encryptedTextArea.append("Initialisierungsvektor (IV): " + iv + "\n\n");
+                encryptedTextArea.append("Verschlüsselung im CTR-Modus:\n");
+            }
+
+            for (int i = 0; i < blocks.length; i++) {
+                String counterBlock = Helper.binaryStringAddNumber(iv, i);
+                String encryptedCounter = spn.encrypt(counterBlock);
+                String cipherBlock = Helper.xorBinaryStrings(encryptedCounter, blocks[i]);
+
+                if (showVerboseOutput.isSelected()) {
+                    encryptedTextArea.append("Block " + (i + 1) + ":\n");
+                    encryptedTextArea.append("  Counter: " + counterBlock + "\n");
+                    encryptedTextArea.append("  Verschlüsselter Counter: " + encryptedCounter + "\n");
+                    encryptedTextArea.append("  Klartext: " + blocks[i] + "\n");
+                    encryptedTextArea.append("  Geheimtext: " + cipherBlock + "\n\n");
+                }
+
+                encryptedText.append(cipherBlock);
+            }
+
+            if (showVerboseOutput.isSelected()) {
+                encryptedTextArea.append("Kompletter Geheimtext:\n");
+            }
+
+            encryptedTextArea.append(encryptedText.toString());
+            copyEncryptedButton.setEnabled(true);
+            updateStatus("Text erfolgreich verschlüsselt", false);
+        } catch (Exception ex) {
+            updateStatus("Fehler bei der Verschlüsselung: " + ex.getMessage(), true);
         }
-
-        // Split into blocks of 16 bits
-        String[] blocks = Helper.splitString(binaryText, 16);
-
-        // Generate IV (first block) - for simplicity, use a fixed IV here
-        String iv = "0000010011010010";
-
-        // Encrypt using CTR mode
-        StringBuilder encryptedText = new StringBuilder();
-        encryptedText.append(iv);  // First block is IV
-
-        for (int i = 0; i < blocks.length; i++) {
-            String counterBlock = Helper.binaryStringAddNumber(iv, i);
-            String encryptedCounter = spn.encrypt(counterBlock);
-            String cipherBlock = Helper.xorBinaryStrings(encryptedCounter, blocks[i]);
-            encryptedText.append(cipherBlock);
-        }
-
-        encryptedTextArea.setText(encryptedText.toString());
     }
 
     private void decryptText() {
-        String encryptedText = encryptedTextArea.getText();
+        String encryptedText = encryptedTextArea.getText().trim();
         if (encryptedText.isEmpty()) {
-            JOptionPane.showMessageDialog(this, "Please encrypt some text first.", "Error", JOptionPane.ERROR_MESSAGE);
+            updateStatus("Fehler: Bitte verschlüsseln Sie zuerst einen Text.", true);
             return;
         }
 
-        String[] cipherBlocks = Helper.splitString(encryptedText, 16);
-        String decryptedBinary = spn.ctr(cipherBlocks);
-        String decryptedText = Helper.binaryToText(decryptedBinary);
+        try {
+            // Remove any verbose output text if present
+            if (encryptedText.contains("Kompletter Geheimtext:")) {
+                encryptedText =
+                    encryptedText.substring(encryptedText.lastIndexOf("Kompletter Geheimtext:") + 22).trim();
+            } else if (encryptedText.contains("Block")) {
+                encryptedText = encryptedText.lines()
+                    .filter(line -> !line.contains(":") && !line.trim().isEmpty() && !line.trim().startsWith(" "))
+                    .reduce((a, b) -> b)
+                    .orElse("");
+            }
 
-        decryptedTextArea.setText(decryptedText);
+            String[] cipherBlocks = Helper.splitString(encryptedText, 16);
+
+            if (showVerboseOutput.isSelected()) {
+                decryptedTextArea.setText("Entschlüsselung im CTR-Modus:\n");
+                decryptedTextArea.append("Anzahl der Blöcke: " + cipherBlocks.length + "\n");
+                decryptedTextArea.append("IV: " + cipherBlocks[0] + "\n\n");
+            } else {
+                decryptedTextArea.setText("");
+            }
+
+            String decryptedBinary = spn.ctr(cipherBlocks);
+
+            if (showVerboseOutput.isSelected()) {
+                decryptedTextArea.append("Entschlüsselter Binärtext: " + decryptedBinary + "\n\n");
+            }
+
+            String decryptedText = Helper.binaryToText(decryptedBinary);
+
+            if (showVerboseOutput.isSelected()) {
+                decryptedTextArea.append("Entschlüsselter Text: ");
+            }
+
+            decryptedTextArea.append(decryptedText);
+            copyDecryptedButton.setEnabled(true);
+            updateStatus("Text erfolgreich entschlüsselt", false);
+        } catch (Exception ex) {
+            updateStatus("Fehler bei der Entschlüsselung: " + ex.getMessage(), true);
+        }
     }
 
     private void resetFields() {
         inputTextArea.setText("");
         encryptedTextArea.setText("");
         decryptedTextArea.setText("");
+        copyEncryptedButton.setEnabled(false);
+        copyDecryptedButton.setEnabled(false);
+        updateStatus("Alle Felder zurückgesetzt", false);
+    }
+
+    private void copyToClipboard(String text) {
+        if (text != null && !text.isEmpty()) {
+            java.awt.Toolkit.getDefaultToolkit().getSystemClipboard()
+                .setContents(new java.awt.datatransfer.StringSelection(text), null);
+            updateStatus("Text in die Zwischenablage kopiert", false);
+        }
+    }
+
+    private void updateStatus(String message, boolean isError) {
+        statusLabel.setText(message);
+        statusLabel.setForeground(isError ? ACCENT_COLOR : TEXT_COLOR);
     }
 
     private String textToBinary(String text) {
@@ -188,6 +408,22 @@ public class SPNWithGUI extends JFrame {
     public static void main(String[] args) {
         // Run the validation test first
         runValidationTest();
+
+        // Set a more modern look and feel
+        try {
+            for (UIManager.LookAndFeelInfo info : UIManager.getInstalledLookAndFeels()) {
+                if ("Nimbus".equals(info.getName())) {
+                    UIManager.setLookAndFeel(info.getClassName());
+                    break;
+                }
+            }
+        } catch (Exception e) {
+            try {
+                UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+            } catch (Exception ex) {
+                // Fallback to default look and feel
+            }
+        }
 
         // Start the GUI
         SwingUtilities.invokeLater(new Runnable() {
