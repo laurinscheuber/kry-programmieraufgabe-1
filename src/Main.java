@@ -8,11 +8,11 @@ public class Main {
         System.out.println("Encrypted: " + encryptedOutput);
         String decryptedOutput = spn.decrypt(cipher);
         System.out.println("Decrypted: " + decryptedOutput);
-        //String[] cipherBlocks = Helper.splitIntoBlocks(ciphertxt, 16);
-        //String ctrDecryptedBinary = spn.ctr(cipherBlocks);
-        //System.out.println("CTR Decrypted Binary: " + ctrDecryptedBinary);
-        //String readableMessage = Helper.convertBinaryToText(ctrDecryptedBinary);
-        //System.out.println("Decrypted Message: " + readableMessage);
+        String[] cipherBlocks = Helper.splitIntoBlocks(ciphertxt, 16);
+        String ctrDecryptedBinary = spn.ctr(cipherBlocks);
+        System.out.println("CTR Decrypted Binary: " + ctrDecryptedBinary);
+        String readableMessage = Helper.convertBinaryToText(ctrDecryptedBinary);
+        System.out.println("Decrypted Message: " + readableMessage);
 
     }
 
